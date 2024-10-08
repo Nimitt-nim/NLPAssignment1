@@ -1,8 +1,12 @@
+import hashlib
 import os
-from simhash import Simhash
 
-# Function to deduplicate articles in multiple text files using Simhash
-def deduplicate_using_simhash(input_folder, output_folder, separator='------------------------', threshold=3):
+# Function to generate a hash for a given text
+def generate_hash(text):
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+# Deduplicate articles in multiple text files and save each file with the same name
+def deduplicate_across_files(input_folder, output_folder, separator='------------------------'):
     seen_hashes = set()
 
     # Loop through all files in the input folder
@@ -18,22 +22,17 @@ def deduplicate_using_simhash(input_folder, output_folder, separator='----------
 
             # Split content into articles using the separator
             articles = content.split(separator)
-            articles = [article.strip() for article in articles if article.strip()]
-
+            print(articles)
             # Deduplicate the articles
             for article in articles:
-                article_hash = Simhash(article)
-                is_duplicate = False
+                article = article.strip()  # Clean up whitespace
+                if article:  # Ensure article is not empty
+                    text_hash = generate_hash(article)
 
-                # Check against already seen hashes
-                for seen_hash in seen_hashes:
-                    if article_hash.distance(Simhash(seen_hash)) <= threshold:
-                        is_duplicate = True
-                        break
-
-                if not is_duplicate:
-                    seen_hashes.add(article_hash.value)  # Store the integer value of Simhash
-                    unique_articles.append(article)
+                    # If the hash is not in seen_hashes, add it to unique_articles
+                    if text_hash not in seen_hashes:
+                        seen_hashes.add(text_hash)
+                        unique_articles.append(article)
 
             # Define output file path (same name as input but in output folder)
             output_path = os.path.join(output_folder, filename)
@@ -44,14 +43,15 @@ def deduplicate_using_simhash(input_folder, output_folder, separator='----------
                 output_file.write(f"\n{separator}\n")  # End with a separator for consistency
 
 # Specify the input folder and output folder
-input_folder = 'NGramsCleanedData'  
-output_folder = 'NGramsDeduplicated1'  
+input_folder = 'NGramsCleanedData'  # Replace with your input folder path
+output_folder = 'NGramsDeduplicatedData'  # Replace with your output folder path
 
 # Ensure the output folder exists, if not, create it
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
 # Call the function
-deduplicate_using_simhash(input_folder, output_folder)
+deduplicate_across_files(input_folder, output_folder)
 
-print("Deduplication using Simhash complete!")
+print("Deduplication across files complete!")
+
